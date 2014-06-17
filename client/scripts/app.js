@@ -2,6 +2,7 @@
 var app = {
   server: 'https://api.parse.com/1/classes/chatterbox',
   rooms: {},
+  friends: {},
 
   init: function(){
     this.message = {
@@ -30,12 +31,20 @@ var app = {
       }
     });
 
+    $("ul").on("click", "li", function(e){
+
+      //console.log('checking data friend ', $(this).data("friend-name"));
+      app.addFriend($(this).data("friend-name"));
+
+
+    });
+
     $("#roomChooser").on("change", function(){
       app.message.roomname = $(this).val();
       app.fetch();
     })
 
-    //setInterval
+    setInterval(app.fetch,1000);
 
   },
   send: function(message){
@@ -57,7 +66,7 @@ var app = {
       url: app.server + "?order=-createdAt",
       type: 'GET',
       success: function(data){
-        console.log('data is: ' , data);
+        //console.log('data is: ' , data);
         app.getRooms(data.results);
         if (app.message.roomname !== null){
          app.display(data.results);
@@ -70,7 +79,7 @@ var app = {
   },
 
   display: function(data){
-    console.log(data);
+    //console.log(data);
     var counter = 0;
     this.clearMessages();
     for (var i = 0; i < data.length; i++){
@@ -86,6 +95,11 @@ var app = {
 
   },
 
+  addFriend: function(friend){
+    app.friends[friend] = true;
+    console.log('friends list ',app.friends);
+  },
+
   findUsername: function(){
     if (/(&|\?)username=/.test(window.location.search)) {
       return window.location.search.slice(10);
@@ -95,12 +109,18 @@ var app = {
   },
 
   addMessage: function(msgObject){
-    var message = "<li>" + escape(msgObject.username) + ": " + escape(msgObject.text) + "</li>";
-    $('.chat').append(message);
+    var friend = escape(msgObject.username);
+    var premessage = "<li>" + escape(msgObject.username) + ": " + escape(msgObject.text) + "</li>";
+    $message = $(premessage).attr("data-friend-name", escape(msgObject.username));
+    $message.addClass('chat');
+    if (app.friends[friend] !== undefined){
+      $message.addClass('username');
+    }
+    $('#chats').append($message);
   },
 
   clearMessages: function(){
-     $(".chat").children().remove();
+     $("#chats").children().remove();
   },
 
   getRooms: function(data){
@@ -124,7 +144,7 @@ var app = {
 
   createRoom: function(roomname){
     app.message.roomname = roomname;
-    $('#roomChooser').append("<option>" + roomname + "</option>");
+    $('#roomChooser').append("<option selected=\"selected\">" + roomname + "</option>");
     $('#roomChooser').val(roomname);
     app.clearMessages()
   }
